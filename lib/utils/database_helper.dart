@@ -19,6 +19,8 @@ class DatabaseHelper {
   String columnLogVehicleId = 'vehicle_id';
   String columnLogId = "id";
   String columnLogDate = 'date';
+  String columnLogFuelAmount = 'fuel_amount';
+  String columnLogFuelCost = 'fuel_cost';
   String columnLogTravelled = 'distance_travelled';
 
   DatabaseHelper._createInstance();
@@ -52,7 +54,7 @@ class DatabaseHelper {
     await db.execute(
         'CREATE TABLE $vehicleTable ($columnVehicleId INTEGER PRIMARY KEY AUTOINCREMENT, $columnVehicleName TEXT)');
     await db.execute(
-        'CREATE TABLE $logTable ($columnLogId INTEGER PRIMARY KEY AUTOINCREMENT, $columnLogVehicleId INTEGER, $columnLogTravelled REAL, $columnLogDate TEXT)');
+        'CREATE TABLE $logTable ($columnLogId INTEGER PRIMARY KEY AUTOINCREMENT, $columnLogVehicleId INTEGER, $columnLogTravelled REAL, $columnLogFuelAmount REAL, $columnLogFuelCost REAL, $columnLogDate TEXT)');
   }
 
   //Fetch Operation: Get all Vehicle objects from database
