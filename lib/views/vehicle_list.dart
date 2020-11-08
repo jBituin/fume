@@ -124,7 +124,6 @@ class VehicleListState extends State<VehicleList> {
                 tooltip: "Add Vehicle",
                 child: Icon(Icons.add),
                 onPressed: () {
-                  updateListView();
                   showAddVehiclePrompt();
                 }) //FloatingActionButton
             ));

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fume/model/fuel_log.dart';
-import 'package:fume/views/vehicle_details.dart';
+import 'package:intl/intl.dart';
+
 import 'dart:async';
 import 'package:fume/model/vehicle.dart';
 import 'package:fume/utils/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:fume/widgets/CustomWidget.dart';
-import 'package:fume/utils/theme_bloc.dart';
+import 'package:fume/widgets/Timeline.dart';
 import 'package:fume/utils/utils.dart';
 
 class VehicleDetail extends StatefulWidget {
@@ -50,12 +52,21 @@ class VehicleDetailState extends State<VehicleDetail> {
         child: Scaffold(
             key: homeScaffold,
             appBar: AppBar(
-                title: Column(
-              children: [
-                Text(widget.vehicle.name, style: TextStyle(fontSize: 25)),
-                Text('Fuel Logs', style: TextStyle(fontSize: 12)),
-              ],
-            )), //AppBar
+              title: Column(
+                children: [
+                  Text(widget.vehicle.name, style: TextStyle(fontSize: 25)),
+                  Text('Expense Logs', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+              // bottom: TabBar(tabs: [
+              //   Tab(
+              //     icon: Icon(Icons.format_list_numbered_rtl),
+              //   ),
+              //   Tab(
+              //     icon: Icon(Icons.build_circle),
+              //   )
+              // ]),
+            ), //AppBar
             body: Container(
               padding: EdgeInsets.all(8.0),
               child: ListView(
@@ -72,45 +83,76 @@ class VehicleDetailState extends State<VehicleDetail> {
                           if (snapshot.data.length as int < 1) {
                             return Center(
                               child: Text(
-                                'No Vehicles',
+                                'No Logs',
                                 style: TextStyle(fontSize: 20),
                               ),
                             );
                           }
-                          return ListView.builder(
-                              itemCount: snapshot.data.length as int,
-                              itemBuilder:
-                                  (BuildContext context, int position) {
-                                return new GestureDetector(
-                                    // onTap: () {
-                                    // },
-                                    child: Card(
-                                  margin: EdgeInsets.all(1.0),
-                                  elevation: 2.0,
-                                  child: CustomWidget(
-                                    title:
-                                        snapshot.data[position].name as String,
-                                    // sub1: snapshot.data[position].date,
-                                    // sub2: snapshot.data[position].time,
-                                    // status: snapshot.data[position].status,
-                                    delete: IconButton(
-                                      icon: Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                      ),
-                                      onPressed: () {
-                                        showDeleteVehiclePrompt(
-                                            snapshot.data[position] as FuelLog);
-                                      },
+                          return Timeline(
+                            children:
+                                List.generate(snapshot.data.length, (index) {
+                              return CustomWidget(
+                                  title: snapshot.data[index].id.toString(),
+                                  sub1: snapshot.data[index].date,
+                                  sub2: snapshot.data[index].fuelAmount
+                                      .toString(),
+                                  // status: snapshot.data[index].status,
+                                  delete: IconButton(
+                                    icon: Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
                                     ),
-                                    trailing: Icon(
-                                      Icons.edit,
-                                      color: Colors.blue,
-                                    ),
+                                    onPressed: () {
+                                      showDeleteLogPrompt(
+                                          snapshot.data[index] as FuelLog);
+                                    },
                                   ),
-                                ) //Card
-                                    );
-                              });
+                                  trailing: Icon(
+                                    Icons.edit,
+                                    color: Colors.blue,
+                                  ));
+                            })
+
+                            // Container(height: 100, color: Colors.amber),
+                            // Container(height: 50, color: Colors.amber),
+                            // Container(height: 200, color: Colors.amber),
+                            // Container(height: 100, color: Colors.amber),
+                            ,
+                          );
+                          // return ListView.builder(
+                          //   itemCount: snapshot.data.length as int,
+                          //   itemBuilder: (BuildContext context, int position) {
+                          //     return new GestureDetector(
+                          //         // onTap: () {
+                          //         // },
+                          //         child: Card(
+                          //       margin: EdgeInsets.all(1.0),
+                          //       elevation: 2.0,
+                          //       child: CustomWidget(
+                          //         title: snapshot.data[position].id.toString(),
+                          //         sub1: snapshot.data[position].date,
+                          //         sub2: snapshot.data[position].fuelAmount
+                          //             .toString(),
+                          //         // status: snapshot.data[position].status,
+                          //         delete: IconButton(
+                          //           icon: Icon(
+                          //             Icons.delete,
+                          //             color: Colors.red,
+                          //           ),
+                          //           onPressed: () {
+                          //             showDeleteLogPrompt(
+                          //                 snapshot.data[position] as FuelLog);
+                          //           },
+                          //         ),
+                          //         trailing: Icon(
+                          //           Icons.edit,
+                          //           color: Colors.blue,
+                          //         ),
+                          //       ),
+                          //     ) //Card
+                          //         );
+                          //   },
+                          // );
                         }
                       },
                     ),
@@ -122,14 +164,23 @@ class VehicleDetailState extends State<VehicleDetail> {
                 tooltip: "Add Vehicle",
                 child: Icon(Icons.add),
                 onPressed: () {
-                  updateListView();
-                  showAddVehiclePrompt();
+                  showAddLogPrompt();
                 }) //FloatingActionButton
             ));
   } //build()
 
-  void showAddVehiclePrompt() async {
+  void showAddLogPrompt() async {
     FuelLog log;
+    double fuelAmount;
+    double fuelCost;
+
+    String logDate = DateFormat('MMM-dd-yyyy').format(DateTime.now());
+    TextEditingController logDateController =
+        TextEditingController(text: logDate);
+
+    print('hehehe');
+    print(logDateController);
+
     showDialog<String>(
         context: context,
         builder: (BuildContext context) {
@@ -139,34 +190,93 @@ class VehicleDetailState extends State<VehicleDetail> {
             fontWeight: FontWeight.bold,
           );
           return AlertDialog(
-              title: const Text('Add a new vhicle'),
-              content: Row(children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    // onChanged: (String value) {
-                    //   setState(() {
-                    //     log = FuelLog(log);
-                    //   });
-                    // },
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                        labelText: 'Vehicle Name',
-                        hintText: 'eg. Honda CB400',
-                        labelStyle: textStyle,
-                        hintStyle: TextStyle(
-                            fontSize: 18,
-                            fontFamily: 'Lato',
-                            fontStyle: FontStyle.italic,
-                            color: Colors.grey)),
-                  ),
-                )
-              ]),
+              title: const Text('Add a new fuel log'),
+              content: Container(
+                child: Column(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 35.0),
+                    ),
+
+                    // Text('Register Form', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),),
+
+                    TextFormField(
+                      // controller: etUsername,
+                      decoration: InputDecoration(
+                        labelText: 'Fuel Amount in Liters',
+                        // hintText: 'Input Username',
+                      ),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
+                      validator: (value) {
+                        if (double.tryParse(value) == null) {
+                          return 'Invalid input';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        if (double.tryParse(value) != null) {
+                          fuelAmount = double.parse(value);
+                        }
+                      },
+                    ),
+                    TextFormField(
+                      // controller: etPassword,
+                      decoration: InputDecoration(
+                          // hintText: 'Input Password'
+                          labelText: 'Fuel Cost'),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'(^\d*\.?\d*)'))
+                      ],
+                      validator: (value) {
+                        if (double.tryParse(value) == null) {
+                          return 'Invalid input';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        if (double.tryParse(value) != null) {
+                          fuelCost = double.parse(value);
+                        }
+                      },
+                    ),
+
+                    TextFormField(
+                      controller: logDateController,
+                      decoration: InputDecoration(
+                        labelText: "Date",
+                      ),
+                      onTap: () async {
+                        DateTime date = DateTime(1900);
+                        FocusScope.of(context).requestFocus(new FocusNode());
+
+                        date = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime(2100));
+
+                        logDateController.text =
+                            DateFormat('MMM-dd-yyyy').format(date);
+                      },
+                      onChanged: (value) {
+                        logDate = value;
+                      },
+                    )
+                  ],
+                ),
+              ),
               actions: <Widget>[
                 RawMaterialButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Cancel')),
                 RawMaterialButton(
                     onPressed: () {
+                      log = FuelLog(
+                          logDate, fuelAmount, fuelCost, widget.vehicle.id);
                       save(log);
                       Navigator.pop(context);
                     },
@@ -175,7 +285,7 @@ class VehicleDetailState extends State<VehicleDetail> {
         });
   }
 
-  void showDeleteVehiclePrompt(FuelLog log) async {
+  void showDeleteLogPrompt(FuelLog log) async {
     showDialog<dynamic>(
         context: context,
         builder: (BuildContext context) {
@@ -186,9 +296,8 @@ class VehicleDetailState extends State<VehicleDetail> {
                 onPressed: () async {
                   await databaseHelper.deleteVehicle(log.id);
                   Navigator.pop(context);
-                  updateListView();
                   utility.showSnackBar(
-                      homeScaffold, 'Vehicle Deleted Successfully.');
+                      homeScaffold, 'Log Deleted Successfully.');
                 },
                 child: Text("Yes"),
               ),
@@ -221,10 +330,9 @@ class VehicleDetailState extends State<VehicleDetail> {
       updateListView();
 
       if (result != 0) {
-        utility.showAlertDialog(
-            context, 'Status', 'Vehicle added successfully.');
+        utility.showAlertDialog(context, 'Status', 'Log added successfully.');
       } else {
-        utility.showAlertDialog(context, 'Status', 'Problem adding vehicle.');
+        utility.showAlertDialog(context, 'Status', 'Problem adding log.');
       }
     }
   }
@@ -233,9 +341,9 @@ class VehicleDetailState extends State<VehicleDetail> {
     final Future<Database> dbFuture = databaseHelper.initializeDatabase();
 
     dbFuture.then((database) {
-      Future<List<FuelLog>> vehicleListFuture =
+      Future<List<FuelLog>> logListFuture =
           databaseHelper.getVehicleLogList(widget.vehicle.id);
-      vehicleListFuture.then((logs) {
+      logListFuture.then((logs) {
         print('logs');
         // print(logs[0].name);
         setState(() {
@@ -247,9 +355,9 @@ class VehicleDetailState extends State<VehicleDetail> {
   } //updateListView()
 
   void delete(int id) async {
-    await databaseHelper.deleteVehicle(id);
+    await databaseHelper.deleteVehicleFuelLog(id);
     updateListView();
     //Navigator.pop(context);
-    utility.showSnackBar(homeScaffold, 'Vehicle Deleted Successfully');
+    utility.showSnackBar(homeScaffold, 'Log Deleted Successfully');
   }
 }
