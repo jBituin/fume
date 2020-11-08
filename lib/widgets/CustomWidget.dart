@@ -4,8 +4,8 @@ class CustomWidget extends StatelessWidget {
   CustomWidget({
     Key key,
     this.title,
-    // this.sub1,
-    // this.sub2,
+    this.sub1,
+    this.sub2,
     this.delete,
     this.trailing,
     // this.status,
@@ -36,15 +36,15 @@ class CustomWidget extends StatelessWidget {
 
                 // const Padding(padding: EdgeInsets.only(bottom: 2.0)),
 
-                // Text(
-                //   '$sub1 · $sub2',
-                //   maxLines: 1,
-                //   style: TextStyle(
-                //       fontFamily: 'Lato',
-                //       fontStyle: FontStyle.italic,
-                //       color: Colors.grey,
-                //       fontSize: 15),
-                // ),
+                Text(
+                  '$sub1 · $sub2',
+                  maxLines: 1,
+                  style: TextStyle(
+                      fontFamily: 'Lato',
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey,
+                      fontSize: 15),
+                ),
 
                 // Text(
                 //   '$status',
