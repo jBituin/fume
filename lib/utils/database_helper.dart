@@ -13,6 +13,7 @@ class DatabaseHelper {
   String vehicleTable = 'vehicle';
   String columnVehicleId = 'id';
   String columnVehicleName = 'name';
+  String columnVehicleCoverImage = 'cover_image';
 
   // Fuel logs table
   String logTable = "fuel_log";
@@ -52,7 +53,7 @@ class DatabaseHelper {
 
   void _createDb(Database db, int newVersion) async {
     await db.execute(
-        'CREATE TABLE $vehicleTable ($columnVehicleId INTEGER PRIMARY KEY AUTOINCREMENT, $columnVehicleName TEXT)');
+        'CREATE TABLE $vehicleTable ($columnVehicleId INTEGER PRIMARY KEY AUTOINCREMENT, $columnVehicleName TEXT, $columnVehicleCoverImage TEXT)');
     await db.execute(
         'CREATE TABLE $logTable ($columnLogId INTEGER PRIMARY KEY AUTOINCREMENT, $columnLogVehicleId INTEGER, $columnLogTravelled REAL, $columnLogFuelAmount REAL, $columnLogFuelCost REAL, $columnLogDate TEXT)');
   }
