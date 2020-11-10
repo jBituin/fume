@@ -9,7 +9,7 @@ class Timeline extends StatelessWidget {
     this.gutterSpacing = 4.0,
     this.padding = const EdgeInsets.all(8),
     this.controller,
-    this.lineColor = Colors.grey,
+    this.lineColor = Colors.blue,
     this.physics,
     this.shrinkWrap = true,
     this.primary = false,
@@ -62,11 +62,15 @@ class Timeline extends StatelessWidget {
       itemBuilder: (context, index) {
         final child = children[index];
 
-        Widget indicator = Icon(Icons.ev_station);
+        Widget indicator = Icon(
+          Icons.ev_station,
+          color: Colors.red,
+        );
         // if (indicators != null) {
         //   indicator = indicators;
         // }
 
+        final isSingleItem = itemCount == 1;
         final isFirst = index == 0;
         final isLast = index == itemCount - 1;
 
@@ -78,6 +82,7 @@ class Timeline extends StatelessWidget {
               indicatorColor: indicatorColor,
               indicatorSize: indicatorSize,
               indicatorStyle: indicatorStyle,
+              isSingleItem: isSingleItem,
               isFirst: isFirst,
               isLast: isLast,
               lineGap: lineGap,
@@ -119,6 +124,7 @@ class _TimelinePainter extends CustomPainter {
     @required this.strokeWidth,
     @required this.style,
     @required this.lineColor,
+    @required this.isSingleItem,
     @required this.isFirst,
     @required this.isLast,
     @required this.itemGap,
@@ -142,6 +148,7 @@ class _TimelinePainter extends CustomPainter {
   final Color lineColor;
   final Paint linePaint;
   final Paint circlePaint;
+  final bool isSingleItem;
   final bool isFirst;
   final bool isLast;
   final double itemGap;
@@ -162,8 +169,10 @@ class _TimelinePainter extends CustomPainter {
       Offset(indicatorRadius, indicatorMargin),
     );
 
-    if (!isFirst) canvas.drawLine(top, centerTop, linePaint);
-    if (!isLast) canvas.drawLine(centerBottom, bottom, linePaint);
+    if (!isSingleItem) {
+      if (!isFirst) canvas.drawLine(top, centerTop, linePaint);
+      if (!isLast) canvas.drawLine(centerBottom, bottom, linePaint);
+    }
 
     if (!hideDefaultIndicator) {
       final Offset offsetCenter = size.centerLeft(Offset(indicatorRadius, 0));
