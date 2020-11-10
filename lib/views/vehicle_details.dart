@@ -178,9 +178,6 @@ class VehicleDetailState extends State<VehicleDetail> {
     TextEditingController logDateController =
         TextEditingController(text: logDate);
 
-    print('hehehe');
-    print(logDateController);
-
     showDialog<String>(
         context: context,
         builder: (BuildContext context) {
@@ -261,6 +258,7 @@ class VehicleDetailState extends State<VehicleDetail> {
 
                         logDateController.text =
                             DateFormat('MMM-dd-yyyy').format(date);
+                        logDate = logDateController.text;
                       },
                       onChanged: (value) {
                         logDate = value;
@@ -275,8 +273,8 @@ class VehicleDetailState extends State<VehicleDetail> {
                     child: const Text('Cancel')),
                 RawMaterialButton(
                     onPressed: () {
-                      log = FuelLog(
-                          logDate, fuelAmount, fuelCost, widget.vehicle.id);
+                      log = FuelLog(logDateController.text, fuelAmount,
+                          fuelCost, widget.vehicle.id);
                       save(log);
                       Navigator.pop(context);
                     },
@@ -294,7 +292,8 @@ class VehicleDetailState extends State<VehicleDetail> {
             actions: <Widget>[
               RawMaterialButton(
                 onPressed: () async {
-                  await databaseHelper.deleteVehicle(log.id);
+                  await databaseHelper.deleteVehicleFuelLog(log.id);
+                  updateListView();
                   Navigator.pop(context);
                   utility.showSnackBar(
                       homeScaffold, 'Log Deleted Successfully.');
