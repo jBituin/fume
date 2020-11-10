@@ -69,7 +69,7 @@ class DatabaseHelper {
       int vehicleId) async {
     final Database db = await database;
     var result = db.rawQuery(
-        'SELECT * FROM $logTable WHERE $columnLogVehicleId=$vehicleId ORDER BY $columnLogDate');
+        'SELECT * FROM $logTable WHERE $columnLogVehicleId=$vehicleId ORDER BY $columnLogDate DESC');
     // var result = db.query(logTable, log.)
     return result;
   }
