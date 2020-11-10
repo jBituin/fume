@@ -4,8 +4,8 @@ import 'dart:async';
 import 'package:fume/model/vehicle.dart';
 import 'package:fume/utils/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:fume/widgets/CustomWidget.dart';
 import 'package:fume/utils/utils.dart';
+import 'dart:math';
 
 class VehicleList extends StatefulWidget {
   final bool darkThemeEnabled;
@@ -79,39 +79,60 @@ class VehicleListState extends State<VehicleList> {
                                     onTap: () {
                                       print('hehee');
                                       Navigator.push(
-                                        context, 
-                                        MaterialPageRoute(
-                                          builder: (context) =>  
-                                            VehicleDetail(snapshot.data[position])
-                                        )
-                                      );
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  VehicleDetail(snapshot
+                                                      .data[position])));
                                     },
                                     child: Card(
-                                  margin: EdgeInsets.all(1.0),
-                                  elevation: 2.0,
-                                  child: CustomWidget(
-                                    title:
-                                        snapshot.data[position].name as String,
-                                    // sub1: snapshot.data[position].date,
-                                    // sub2: snapshot.data[position].time,
-                                    // status: snapshot.data[position].status,
-                                    delete: IconButton(
-                                      icon: Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
+                                      color: Colors.primaries[Random()
+                                          .nextInt(Colors.primaries.length)],
+                                      child: Padding(
+                                        padding: EdgeInsets.all(15.0),
+                                        child: Row(
+                                          children: <Widget>[
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: <Widget>[
+                                                  Text(
+                                                    snapshot
+                                                        .data[position].name,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style:
+                                                        TextStyle(fontSize: 20),
+                                                  ), //Text
+                                                ],
+                                              ), //Column
+                                            ),
+                                            IconButton(
+                                              icon: Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                              ),
+                                              onPressed: () {
+                                                showDeleteVehiclePrompt(snapshot
+                                                    .data[position] as Vehicle);
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: Icon(
+                                                Icons.edit,
+                                                color: Colors.blue,
+                                              ),
+                                              onPressed: () {
+                                                showEditVehiclePrompt(snapshot
+                                                    .data[position] as Vehicle);
+                                              },
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      onPressed: () {
-                                        showDeleteVehiclePrompt(
-                                            snapshot.data[position] as Vehicle);
-                                      },
-                                    ),
-                                    trailing: Icon(
-                                      Icons.edit,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ) //Card
-                                    );
+                                    ));
                               });
                         }
                       },
@@ -128,6 +149,55 @@ class VehicleListState extends State<VehicleList> {
                 }) //FloatingActionButton
             ));
   } //build()
+
+  void showEditVehiclePrompt(Vehicle vehicle) async {
+    final vehicleNameController = TextEditingController(text: vehicle.name);
+    showDialog<String>(
+        context: context,
+        builder: (BuildContext context) {
+          const textStyle = TextStyle(
+            fontSize: 20,
+            fontFamily: 'Lato',
+            fontWeight: FontWeight.bold,
+          );
+          return AlertDialog(
+              title: const Text('Edit Vehicle'),
+              content: Row(children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: vehicleNameController,
+                    onChanged: (String value) {
+                      setState(() {
+                        vehicle.name = value;
+                      });
+                    },
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                        labelText: 'Vehicle Name',
+                        hintText: 'eg. Honda CB400',
+                        labelStyle: textStyle,
+                        hintStyle: TextStyle(
+                            fontSize: 18,
+                            fontFamily: 'Lato',
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey)),
+                  ),
+                )
+              ]),
+              actions: <Widget>[
+                RawMaterialButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel')),
+                RawMaterialButton(
+                    onPressed: () {
+                      print(vehicle.name);
+                      save(vehicle);
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Yeppers'))
+              ]);
+        });
+  }
 
   void showAddVehiclePrompt() async {
     Vehicle vehicle;
@@ -222,8 +292,9 @@ class VehicleListState extends State<VehicleList> {
       updateListView();
 
       if (result != 0) {
+        String message = vehicle.id != null ? 'edited' : 'added';
         utility.showAlertDialog(
-            context, 'Status', 'Vehicle added successfully.');
+            context, 'Status', 'Vehicle $message successfully.');
       } else {
         utility.showAlertDialog(context, 'Status', 'Problem adding vehicle.');
       }
