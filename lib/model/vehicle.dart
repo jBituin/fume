@@ -1,9 +1,7 @@
-import 'dart:html';
-
 import 'package:fume/model/fuel_log.dart';
 
 class Vehicle {
-  Vehicle(this._name);
+  Vehicle(this._name, [this._coverImage]);
 
   int _id;
   String _name;
@@ -37,6 +35,6 @@ class Vehicle {
   Vehicle.fromMapObject(Map<String, dynamic> map) {
     _id = map['id'] as int;
     _name = map['name'] as String;
-    _coverImage = map['coverImage'] as String;
+    _coverImage = map['cover_image'] as String;
   }
 }

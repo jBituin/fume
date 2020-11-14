@@ -1,11 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:fume/views/vehicle_details.dart';
 import 'dart:async';
 import 'package:fume/model/vehicle.dart';
 import 'package:fume/utils/database_helper.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:fume/utils/utils.dart';
-import 'dart:math';
 
 class VehicleList extends StatefulWidget {
   final bool darkThemeEnabled;
@@ -24,6 +27,7 @@ class VehicleListState extends State<VehicleList> {
   int count = 0;
   String _themeType;
   final homeScaffold = GlobalKey<ScaffoldState>();
+  final _picker = ImagePicker();
 
   @override
   void initState() {
@@ -86,52 +90,64 @@ class VehicleListState extends State<VehicleList> {
                                                       .data[position])));
                                     },
                                     child: Card(
-                                      color: Colors.primaries[Random()
-                                          .nextInt(Colors.primaries.length)],
                                       child: Padding(
-                                        padding: EdgeInsets.all(15.0),
-                                        child: Row(
-                                          children: <Widget>[
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
+                                          padding: EdgeInsets.all(2.0),
+                                          child: Column(
+                                            children: [
+                                              ClipRect(
+                                                child: imageFromBase64String(
+                                                    snapshot.data[position]
+                                                        .coverImage as String),
+                                              ),
+                                              Row(
                                                 children: <Widget>[
-                                                  Text(
-                                                    snapshot
-                                                        .data[position].name,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style:
-                                                        TextStyle(fontSize: 20),
-                                                  ), //Text
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: <Widget>[
+                                                        Text(
+                                                          snapshot
+                                                              .data[position]
+                                                              .name,
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                              fontSize: 20),
+                                                        ), //Text
+                                                      ],
+                                                    ), //Column
+                                                  ),
+                                                  IconButton(
+                                                    icon: Icon(
+                                                      Icons.delete,
+                                                      color: Colors.red,
+                                                    ),
+                                                    onPressed: () {
+                                                      showDeleteVehiclePrompt(
+                                                          snapshot.data[
+                                                                  position]
+                                                              as Vehicle);
+                                                    },
+                                                  ),
+                                                  IconButton(
+                                                    icon: Icon(
+                                                      Icons.edit,
+                                                      color: Colors.blue,
+                                                    ),
+                                                    onPressed: () {
+                                                      showEditVehiclePrompt(
+                                                          snapshot.data[
+                                                                  position]
+                                                              as Vehicle);
+                                                    },
+                                                  ),
                                                 ],
-                                              ), //Column
-                                            ),
-                                            IconButton(
-                                              icon: Icon(
-                                                Icons.delete,
-                                                color: Colors.red,
                                               ),
-                                              onPressed: () {
-                                                showDeleteVehiclePrompt(snapshot
-                                                    .data[position] as Vehicle);
-                                              },
-                                            ),
-                                            IconButton(
-                                              icon: Icon(
-                                                Icons.edit,
-                                                color: Colors.blue,
-                                              ),
-                                              onPressed: () {
-                                                showEditVehiclePrompt(snapshot
-                                                    .data[position] as Vehicle);
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                            ],
+                                          )),
                                     ));
                               });
                         }
@@ -167,9 +183,7 @@ class VehicleListState extends State<VehicleList> {
                   child: TextField(
                     controller: vehicleNameController,
                     onChanged: (String value) {
-                      setState(() {
-                        vehicle.name = value;
-                      });
+                      vehicle.name = value;
                     },
                     autofocus: true,
                     decoration: const InputDecoration(
@@ -201,6 +215,13 @@ class VehicleListState extends State<VehicleList> {
 
   void showAddVehiclePrompt() async {
     Vehicle vehicle;
+    String vehicleName;
+    String coverImage;
+
+    setCoverImage() async {
+      coverImage = await _getImgFromGallery();
+    }
+
     showDialog<String>(
         context: context,
         builder: (BuildContext context) {
@@ -211,13 +232,16 @@ class VehicleListState extends State<VehicleList> {
           );
           return AlertDialog(
               title: const Text('Add a new vhicle'),
-              content: Row(children: <Widget>[
+              content: Column(children: <Widget>[
+                ClipRect(
+                    child: coverImage != null
+                        ? coverImage
+                        : Image(
+                            image: AssetImage('../assets/placeholder.png'))),
                 Expanded(
                   child: TextField(
                     onChanged: (String value) {
-                      setState(() {
-                        vehicle = Vehicle(value);
-                      });
+                      vehicleName = value;
                     },
                     autofocus: true,
                     decoration: const InputDecoration(
@@ -230,6 +254,28 @@ class VehicleListState extends State<VehicleList> {
                             fontStyle: FontStyle.italic,
                             color: Colors.grey)),
                   ),
+                ),
+                Expanded(
+                  child: Container(
+                    child: new Wrap(
+                      children: <Widget>[
+                        new ListTile(
+                            leading: new Icon(Icons.photo_library),
+                            title: new Text('Photo Library'),
+                            onTap: () {
+                              setCoverImage();
+                            }),
+                        new ListTile(
+                          leading: new Icon(Icons.photo_camera),
+                          title: new Text('Camera'),
+                          onTap: () {
+                            _getImgFromCamera();
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 )
               ]),
               actions: <Widget>[
@@ -238,12 +284,37 @@ class VehicleListState extends State<VehicleList> {
                     child: const Text('Cancel')),
                 RawMaterialButton(
                     onPressed: () {
+                      vehicle = Vehicle(vehicleName, coverImage);
                       save(vehicle);
                       Navigator.pop(context);
                     },
                     child: const Text('Yeppers'))
               ]);
         });
+  }
+
+  _getImgFromCamera() async {
+    File image = (await ImagePicker()
+        .getImage(source: ImageSource.camera, imageQuality: 50)) as File;
+
+    return image;
+  }
+
+  _getImgFromGallery() async {
+    PickedFile pickedFile =
+        await _picker.getImage(source: ImageSource.gallery, imageQuality: 50);
+    File image = File(pickedFile.path);
+    if (image != null) {
+      List<int> imageBytes = await image.readAsBytes();
+      String base64Image = base64Encode(imageBytes);
+      return base64Image;
+    }
+    return null;
+  }
+
+  Image imageFromBase64String(String base64String) {
+    if (base64String == null) return null;
+    return Image.memory(base64Decode(base64String));
   }
 
   void showDeleteVehiclePrompt(Vehicle vehicle) async {
@@ -254,12 +325,9 @@ class VehicleListState extends State<VehicleList> {
             title: Text("Are you sure, you want to delete ${vehicle.name}?"),
             actions: <Widget>[
               RawMaterialButton(
-                onPressed: () async {
-                  await databaseHelper.deleteVehicle(vehicle.id);
+                onPressed: () {
+                  delete(vehicle.id);
                   Navigator.pop(context);
-                  updateListView();
-                  utility.showSnackBar(
-                      homeScaffold, 'Vehicle Deleted Successfully.');
                 },
                 child: Text("Yes"),
               ),
@@ -284,9 +352,7 @@ class VehicleListState extends State<VehicleList> {
         result = await databaseHelper.updateVehicle(vehicle);
       } else {
         //Insert Operation
-        print('@else');
         result = await databaseHelper.insertVehicle(vehicle);
-        print(result);
       }
 
       updateListView();
@@ -307,8 +373,6 @@ class VehicleListState extends State<VehicleList> {
     dbFuture.then((database) {
       Future<List<Vehicle>> vehicleListFuture = databaseHelper.getVehicleList();
       vehicleListFuture.then((vehicleList) {
-        print('vehicleList');
-        // print(vehicleList[0].name);
         setState(() {
           this.vehicleList = vehicleList;
           this.count = vehicleList.length;
