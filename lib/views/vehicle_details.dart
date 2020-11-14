@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fume/model/fuel_log.dart';
@@ -55,111 +57,80 @@ class VehicleDetailState extends State<VehicleDetail> {
               title: Column(
                 children: [
                   Text(widget.vehicle.name, style: TextStyle(fontSize: 25)),
-                  Text('Expense Logs', style: TextStyle(fontSize: 12)),
+                  Text('Fuel Logs', style: TextStyle(fontSize: 12)),
                 ],
               ),
-              // bottom: TabBar(tabs: [
-              //   Tab(
-              //     icon: Icon(Icons.format_list_numbered_rtl),
-              //   ),
-              //   Tab(
-              //     icon: Icon(Icons.build_circle),
-              //   )
-              // ]),
             ), //AppBar
-            body: Container(
-              padding: EdgeInsets.all(8.0),
-              child: ListView(
-                children: <Widget>[
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height,
-                    child: FutureBuilder(
-                      future:
-                          databaseHelper.getVehicleLogList(widget.vehicle.id),
-                      builder: (BuildContext context, AsyncSnapshot snapshot) {
-                        if (snapshot.data == null) {
-                          return Text("Loading");
-                        } else {
-                          if (snapshot.data.length as int < 1) {
-                            return Center(
-                              child: Text(
-                                'No Logs',
-                                style: TextStyle(fontSize: 20),
-                              ),
-                            );
-                          }
-                          return Timeline(
-                            children:
-                                List.generate(snapshot.data.length, (index) {
-                              return CustomWidget(
-                                  title: snapshot.data[index].id.toString(),
-                                  sub1: snapshot.data[index].date,
-                                  sub2: snapshot.data[index].fuelAmount
-                                      .toString(),
-                                  // status: snapshot.data[index].status,
-                                  delete: IconButton(
-                                    icon: Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
+            body: Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                Column(children: <Widget>[
+                  ClipRect(
+                      child: imageFromBase64String(widget.vehicle.coverImage)),
+                  Expanded(
+                    child: Container(
+                      color: Colors.white,
+                      child: ListView(
+                        children: <Widget>[
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height,
+                            child: FutureBuilder(
+                              future: databaseHelper
+                                  .getVehicleLogList(widget.vehicle.id),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot snapshot) {
+                                if (snapshot.data == null) {
+                                  return Text("Loading");
+                                } else {
+                                  if (snapshot.data.length as int < 1) {
+                                    return Center(
+                                      child: Text(
+                                        'No Logs',
+                                        style: TextStyle(fontSize: 20),
+                                      ),
+                                    );
+                                  }
+                                  return Timeline(
+                                    children: List.generate(
+                                      snapshot.data.length,
+                                      (index) {
+                                        return CustomWidget(
+                                            title:
+                                                ' ₱${snapshot.data[index].fuelCost.toString()}',
+                                            sub1: snapshot.data[index].date,
+                                            sub2:
+                                                '${snapshot.data[index].fuelAmount.toString()} Liters',
+                                            // status: snapshot.data[index].status,
+                                            delete: IconButton(
+                                              icon: Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                              ),
+                                              onPressed: () {
+                                                showDeleteLogPrompt(snapshot
+                                                    .data[index] as FuelLog);
+                                              },
+                                            ),
+                                            trailing: Icon(
+                                              Icons.edit,
+                                              color: Colors.blue,
+                                            ));
+                                      },
                                     ),
-                                    onPressed: () {
-                                      showDeleteLogPrompt(
-                                          snapshot.data[index] as FuelLog);
-                                    },
-                                  ),
-                                  trailing: Icon(
-                                    Icons.edit,
-                                    color: Colors.blue,
-                                  ));
-                            })
-
-                            // Container(height: 100, color: Colors.amber),
-                            // Container(height: 50, color: Colors.amber),
-                            // Container(height: 200, color: Colors.amber),
-                            // Container(height: 100, color: Colors.amber),
-                            ,
-                          );
-                          // return ListView.builder(
-                          //   itemCount: snapshot.data.length as int,
-                          //   itemBuilder: (BuildContext context, int position) {
-                          //     return new GestureDetector(
-                          //         // onTap: () {
-                          //         // },
-                          //         child: Card(
-                          //       margin: EdgeInsets.all(1.0),
-                          //       elevation: 2.0,
-                          //       child: CustomWidget(
-                          //         title: snapshot.data[position].id.toString(),
-                          //         sub1: snapshot.data[position].date,
-                          //         sub2: snapshot.data[position].fuelAmount
-                          //             .toString(),
-                          //         // status: snapshot.data[position].status,
-                          //         delete: IconButton(
-                          //           icon: Icon(
-                          //             Icons.delete,
-                          //             color: Colors.red,
-                          //           ),
-                          //           onPressed: () {
-                          //             showDeleteLogPrompt(
-                          //                 snapshot.data[position] as FuelLog);
-                          //           },
-                          //         ),
-                          //         trailing: Icon(
-                          //           Icons.edit,
-                          //           color: Colors.blue,
-                          //         ),
-                          //       ),
-                          //     ) //Card
-                          //         );
-                          //   },
-                          // );
-                        }
-                      },
+                                  );
+                                }
+                              },
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                   )
-                ],
-              ),
+                ])
+              ],
             ),
+
+            // ),
             floatingActionButton: FloatingActionButton(
                 tooltip: "Add Vehicle",
                 child: Icon(Icons.add),
@@ -168,6 +139,13 @@ class VehicleDetailState extends State<VehicleDetail> {
                 }) //FloatingActionButton
             ));
   } //build()
+
+  Image imageFromBase64String(String base64String) {
+    print('base64');
+    print(base64String);
+    if (base64String == null) return null;
+    return Image.memory(base64Decode(base64String));
+  }
 
   void showAddLogPrompt() async {
     FuelLog log;
